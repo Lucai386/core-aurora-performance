@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="007-create-indexes" author="luca.arnone">
+        <!-- Users indexes -->
+        <createIndex indexName="idx_users_keycloak_id" tableName="users" schemaName="aurora">
+            <column name="keycloak_id"/>
+        </createIndex>
+        <createIndex indexName="idx_users_ruolo" tableName="users" schemaName="aurora">
+            <column name="ruolo"/>
+        </createIndex>
+        <createIndex indexName="idx_users_codice_istat" tableName="users" schemaName="aurora">
+            <column name="codice_istat"/>
+        </createIndex>
+
+        <!-- Strutture indexes -->
+        <createIndex indexName="idx_strutture_tipo" tableName="strutture" schemaName="aurora">
+            <column name="tipo"/>
+        </createIndex>
+        <createIndex indexName="idx_strutture_parent" tableName="strutture" schemaName="aurora">
+            <column name="id_parent"/>
+        </createIndex>
+
+        <!-- LPM indexes -->
+        <createIndex indexName="idx_lpm_codice_istat" tableName="lpm" schemaName="aurora">
+            <column name="codice_istat"/>
+        </createIndex>
+        <createIndex indexName="idx_lpm_mandato" tableName="lpm" schemaName="aurora">
+            <column name="anno_inizio_mandato"/>
+            <column name="anno_fine_mandato"/>
+        </createIndex>
+        <createIndex indexName="idx_lpm_stato" tableName="lpm" schemaName="aurora">
+            <column name="stato"/>
+        </createIndex>
+        <createIndex indexName="idx_lpm_deleted" tableName="lpm" schemaName="aurora">
+            <column name="deleted_at"/>
+        </createIndex>
+
+        <!-- LPM Note indexes -->
+        <createIndex indexName="idx_lpm_note_lpm_id" tableName="lpm_note" schemaName="aurora">
+            <column name="lpm_id"/>
+        </createIndex>
+
+        <!-- User Logs indexes -->
+        <createIndex indexName="idx_user_logs_user_id" tableName="user_logs" schemaName="aurora">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex indexName="idx_user_logs_created_at" tableName="user_logs" schemaName="aurora">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

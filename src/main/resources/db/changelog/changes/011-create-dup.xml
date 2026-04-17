@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Tabella principale DUP (Documento Unico di Programmazione) -->
+    <changeSet id="011-create-dup" author="aurora">
+        <createTable tableName="dup" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="codice_istat" type="VARCHAR(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="anno" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <!-- Sezione: STRATEGICA o OPERATIVA -->
+            <column name="sezione" type="VARCHAR(20)" defaultValue="STRATEGICA">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Stato: BOZZA, APPROVATO, IN_CORSO, COMPLETATO -->
+            <column name="stato" type="VARCHAR(20)" defaultValue="BOZZA">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_approvazione" type="DATE"/>
+            <column name="created_by" type="INTEGER"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="INTEGER"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="dup" schemaName="aurora" indexName="idx_dup_codice_istat">
+            <column name="codice_istat"/>
+        </createIndex>
+        <createIndex tableName="dup" schemaName="aurora" indexName="idx_dup_anno">
+            <column name="anno"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Missioni del DUP (es. "Servizi istituzionali", "Ordine pubblico", etc.) -->
+    <changeSet id="011-create-dup-missioni" author="aurora">
+        <createTable tableName="dup_missioni" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="dup_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="codice" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <column name="ordine" type="INTEGER" defaultValue="0"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_missioni"
+            baseTableSchemaName="aurora"
+            baseColumnNames="dup_id"
+            constraintName="fk_dup_missioni_dup"
+            referencedTableName="dup"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <createIndex tableName="dup_missioni" schemaName="aurora" indexName="idx_dup_missioni_dup_id">
+            <column name="dup_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Programmi del DUP (sotto le missioni) -->
+    <changeSet id="011-create-dup-programmi" author="aurora">
+        <createTable tableName="dup_programmi" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="missione_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="codice" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <column name="ordine" type="INTEGER" defaultValue="0"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_programmi"
+            baseTableSchemaName="aurora"
+            baseColumnNames="missione_id"
+            constraintName="fk_dup_programmi_missione"
+            referencedTableName="dup_missioni"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <createIndex tableName="dup_programmi" schemaName="aurora" indexName="idx_dup_programmi_missione_id">
+            <column name="missione_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Obiettivi del DUP (sotto i programmi) -->
+    <changeSet id="011-create-dup-obiettivi" author="aurora">
+        <createTable tableName="dup_obiettivi" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="programma_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dup_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="codice" type="VARCHAR(20)"/>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <!-- Collegamento opzionale a LPM -->
+            <column name="lpm_id" type="BIGINT"/>
+            <!-- Tipo: STRATEGICO, OPERATIVO, GESTIONALE -->
+            <column name="tipo" type="VARCHAR(20)" defaultValue="OPERATIVO"/>
+            <!-- Stato: TODO, IN_CORSO, COMPLETATO -->
+            <column name="stato" type="VARCHAR(20)" defaultValue="TODO"/>
+            <column name="progresso" type="INTEGER" defaultValue="0"/>
+            <column name="data_inizio" type="DATE"/>
+            <column name="data_fine" type="DATE"/>
+            <column name="budget" type="DECIMAL(15,2)"/>
+            <column name="ordine" type="INTEGER" defaultValue="0"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_obiettivi"
+            baseTableSchemaName="aurora"
+            baseColumnNames="programma_id"
+            constraintName="fk_dup_obiettivi_programma"
+            referencedTableName="dup_programmi"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_obiettivi"
+            baseTableSchemaName="aurora"
+            baseColumnNames="dup_id"
+            constraintName="fk_dup_obiettivi_dup"
+            referencedTableName="dup"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <createIndex tableName="dup_obiettivi" schemaName="aurora" indexName="idx_dup_obiettivi_programma_id">
+            <column name="programma_id"/>
+        </createIndex>
+        <createIndex tableName="dup_obiettivi" schemaName="aurora" indexName="idx_dup_obiettivi_dup_id">
+            <column name="dup_id"/>
+        </createIndex>
+        <createIndex tableName="dup_obiettivi" schemaName="aurora" indexName="idx_dup_obiettivi_lpm_id">
+            <column name="lpm_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Assegnazioni obiettivi a strutture/utenti -->
+    <changeSet id="011-create-dup-assegnazioni" author="aurora">
+        <createTable tableName="dup_assegnazioni" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="obiettivo_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Assegnazione a struttura -->
+            <column name="struttura_id" type="INTEGER"/>
+            <!-- Assegnazione a utente (responsabile) -->
+            <column name="user_id" type="INTEGER"/>
+            <!-- Ruolo nell'assegnazione: RESPONSABILE, COLLABORATORE, SUPERVISORE -->
+            <column name="ruolo" type="VARCHAR(20)" defaultValue="RESPONSABILE"/>
+            <column name="peso" type="INTEGER" defaultValue="100">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_assegnazioni"
+            baseTableSchemaName="aurora"
+            baseColumnNames="obiettivo_id"
+            constraintName="fk_dup_assegnazioni_obiettivo"
+            referencedTableName="dup_obiettivi"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_assegnazioni"
+            baseTableSchemaName="aurora"
+            baseColumnNames="struttura_id"
+            constraintName="fk_dup_assegnazioni_struttura"
+            referencedTableName="strutture"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_assegnazioni"
+            baseTableSchemaName="aurora"
+            baseColumnNames="user_id"
+            constraintName="fk_dup_assegnazioni_user"
+            referencedTableName="users"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <createIndex tableName="dup_assegnazioni" schemaName="aurora" indexName="idx_dup_assegnazioni_obiettivo_id">
+            <column name="obiettivo_id"/>
+        </createIndex>
+        <createIndex tableName="dup_assegnazioni" schemaName="aurora" indexName="idx_dup_assegnazioni_struttura_id">
+            <column name="struttura_id"/>
+        </createIndex>
+        <createIndex tableName="dup_assegnazioni" schemaName="aurora" indexName="idx_dup_assegnazioni_user_id">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

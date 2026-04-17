@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Semplificazione struttura DUP: rimuovi missioni/programmi, progetti collegati direttamente al DUP -->
+    
+    <!-- Drop tabelle intermedie non più necessarie -->
+    <changeSet id="012-drop-dup-assegnazioni" author="aurora">
+        <dropTable tableName="dup_assegnazioni" schemaName="aurora"/>
+    </changeSet>
+
+    <changeSet id="012-drop-dup-obiettivi" author="aurora">
+        <dropTable tableName="dup_obiettivi" schemaName="aurora"/>
+    </changeSet>
+
+    <changeSet id="012-drop-dup-programmi" author="aurora">
+        <dropTable tableName="dup_programmi" schemaName="aurora"/>
+    </changeSet>
+
+    <changeSet id="012-drop-dup-missioni" author="aurora">
+        <dropTable tableName="dup_missioni" schemaName="aurora"/>
+    </changeSet>
+
+    <!-- Ricrea tabella progetti direttamente sotto DUP -->
+    <changeSet id="012-create-dup-progetti" author="aurora">
+        <createTable tableName="dup_progetti" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="dup_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="codice" type="VARCHAR(20)"/>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <!-- Collegamento opzionale a LPM (prima si crea LPM, poi si aggancia) -->
+            <column name="lpm_id" type="BIGINT"/>
+            <!-- Responsabile del progetto -->
+            <column name="responsabile_id" type="INTEGER"/>
+            <!-- Struttura assegnata -->
+            <column name="struttura_id" type="INTEGER"/>
+            <!-- Tipo: STRATEGICO, OPERATIVO, GESTIONALE -->
+            <column name="tipo" type="VARCHAR(20)" defaultValue="OPERATIVO"/>
+            <!-- Stato: TODO, IN_CORSO, COMPLETATO -->
+            <column name="stato" type="VARCHAR(20)" defaultValue="TODO"/>
+            <column name="progresso" type="INTEGER" defaultValue="0"/>
+            <column name="priorita" type="INTEGER" defaultValue="0"/>
+            <column name="data_inizio" type="DATE"/>
+            <column name="data_fine" type="DATE"/>
+            <column name="budget" type="DECIMAL(15,2)"/>
+            <column name="note" type="TEXT"/>
+            <column name="ordine" type="INTEGER" defaultValue="0"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <!-- Foreign keys -->
+        <addForeignKeyConstraint
+            baseTableName="dup_progetti"
+            baseTableSchemaName="aurora"
+            baseColumnNames="dup_id"
+            constraintName="fk_dup_progetti_dup"
+            referencedTableName="dup"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_progetti"
+            baseTableSchemaName="aurora"
+            baseColumnNames="lpm_id"
+            constraintName="fk_dup_progetti_lpm"
+            referencedTableName="lpm"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_progetti"
+            baseTableSchemaName="aurora"
+            baseColumnNames="responsabile_id"
+            constraintName="fk_dup_progetti_responsabile"
+            referencedTableName="users"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="dup_progetti"
+            baseTableSchemaName="aurora"
+            baseColumnNames="struttura_id"
+            constraintName="fk_dup_progetti_struttura"
+            referencedTableName="strutture"
+            referencedTableSchemaName="aurora"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <!-- Indici -->
+        <createIndex tableName="dup_progetti" schemaName="aurora" indexName="idx_dup_progetti_dup_id">
+            <column name="dup_id"/>
+        </createIndex>
+        <createIndex tableName="dup_progetti" schemaName="aurora" indexName="idx_dup_progetti_lpm_id">
+            <column name="lpm_id"/>
+        </createIndex>
+        <createIndex tableName="dup_progetti" schemaName="aurora" indexName="idx_dup_progetti_responsabile_id">
+            <column name="responsabile_id"/>
+        </createIndex>
+        <createIndex tableName="dup_progetti" schemaName="aurora" indexName="idx_dup_progetti_struttura_id">
+            <column name="struttura_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

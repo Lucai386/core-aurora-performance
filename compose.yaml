@@ -1,0 +1,21 @@
+services:
+  core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aurora-core
+    ports:
+      - '8081:8081'
+    environment:
+      DB_URL: jdbc:postgresql://aurora-postgres:5432/postgres?currentSchema=aurora
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      KEYCLOAK_AUTH_SERVER_URL: http://aurora-keycloak:8080
+      KEYCLOAK_REALM: aurora-performance
+      SERVER_PORT: 8081
+    networks:
+      - aurora-net
+
+networks:
+  aurora-net:
+    external: true

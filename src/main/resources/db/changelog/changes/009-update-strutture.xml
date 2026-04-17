@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="009-update-strutture" author="luca.arnone">
+        <!-- Rinomina codice_istat in codice_istat_comune per coerenza -->
+        <renameColumn 
+            schemaName="aurora"
+            tableName="strutture" 
+            oldColumnName="codice_istat" 
+            newColumnName="codice_istat_comune"
+            columnDataType="CHAR(6)"/>
+
+        <!-- Aggiunge id_responsabile: utente che dirige la struttura -->
+        <addColumn schemaName="aurora" tableName="strutture">
+            <column name="id_responsabile" type="INTEGER"/>
+        </addColumn>
+
+        <!-- Aggiunge ruolo visualizzato (es. "Segretario Comunale") -->
+        <addColumn schemaName="aurora" tableName="strutture">
+            <column name="ruolo_label" type="VARCHAR(100)"/>
+        </addColumn>
+
+        <!-- Aggiunge colore opzionale per UI -->
+        <addColumn schemaName="aurora" tableName="strutture">
+            <column name="colore" type="VARCHAR(7)"/>
+        </addColumn>
+
+        <!-- Aggiunge ordine per sorting -->
+        <addColumn schemaName="aurora" tableName="strutture">
+            <column name="ordine" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!-- Foreign key a users per il responsabile -->
+        <addForeignKeyConstraint 
+            baseTableSchemaName="aurora"
+            baseTableName="strutture" 
+            baseColumnNames="id_responsabile"
+            referencedTableSchemaName="aurora"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_strutture_responsabile"/>
+    </changeSet>
+
+</databaseChangeLog>

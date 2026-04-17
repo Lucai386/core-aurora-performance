@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="017-create-obiettivo" author="luca.arnone">
+        <comment>Tabella obiettivi operativi e progressivi</comment>
+        
+        <createTable schemaName="aurora" tableName="obiettivo">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="codice_istat" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="codice" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="text"/>
+            <column name="unita_misura" type="varchar(50)"/>
+            <column name="tipo" type="varchar(20)" defaultValue="CRESCENTE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stato" type="varchar(20)" defaultValue="ATTIVO"/>
+            <column name="valore_iniziale" type="decimal(12,2)" defaultValueNumeric="0"/>
+            <column name="valore_target" type="decimal(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valore_corrente" type="decimal(12,2)" defaultValueNumeric="0"/>
+            <column name="peso" type="decimal(5,2)" defaultValueNumeric="100"/>
+            <column name="data_inizio" type="date"/>
+            <column name="data_fine" type="date"/>
+            <column name="anno" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="struttura_id" type="bigint"/>
+            <column name="utente_assegnato_id" type="bigint"/>
+            <column name="creato_da_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex schemaName="aurora" tableName="obiettivo" indexName="idx_obiettivo_codice_istat">
+            <column name="codice_istat"/>
+        </createIndex>
+
+        <createIndex schemaName="aurora" tableName="obiettivo" indexName="idx_obiettivo_anno">
+            <column name="anno"/>
+        </createIndex>
+
+        <createIndex schemaName="aurora" tableName="obiettivo" indexName="idx_obiettivo_utente_assegnato">
+            <column name="utente_assegnato_id"/>
+        </createIndex>
+
+        <createTable schemaName="aurora" tableName="obiettivo_progressivo">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="obiettivo_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valore_registrato" type="decimal(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valore_precedente" type="decimal(12,2)"/>
+            <column name="note" type="text"/>
+            <column name="registrato_da_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_registrazione" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex schemaName="aurora" tableName="obiettivo_progressivo" indexName="idx_progressivo_obiettivo">
+            <column name="obiettivo_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint 
+            baseTableSchemaName="aurora"
+            baseTableName="obiettivo_progressivo" 
+            baseColumnNames="obiettivo_id"
+            constraintName="fk_progressivo_obiettivo"
+            referencedTableSchemaName="aurora"
+            referencedTableName="obiettivo" 
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>

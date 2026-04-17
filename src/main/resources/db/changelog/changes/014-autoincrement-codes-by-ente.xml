@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- 
+        Rimuove il tipo progetto (STRATEGICO/OPERATIVO/GESTIONALE) e 
+        implementa codici autoincrementali per ente (codice_istat).
+        
+        Ogni ente avrà le proprie sequenze:
+        - DUP: DUP001, DUP002, ...
+        - Progetti: PRJ001, PRJ002, ...
+        - Attività: ATT001, ATT002, ...
+    -->
+
+    <!-- Rimuovi colonna tipo da dup_progetti -->
+    <changeSet id="014-drop-tipo-from-progetti" author="aurora">
+        <dropColumn tableName="dup_progetti" schemaName="aurora" columnName="tipo"/>
+    </changeSet>
+
+    <!-- Tabella per gestire i contatori dei codici per ente -->
+    <changeSet id="014-create-codice-sequence" author="aurora">
+        <createTable tableName="codice_sequence" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <!-- Codice ISTAT dell'ente -->
+            <column name="codice_istat" type="VARCHAR(6)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Tipo entità: DUP, PRJ, ATT -->
+            <column name="entity_type" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Ultimo numero usato -->
+            <column name="last_number" type="BIGINT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Indice unico su (codice_istat, entity_type) -->
+        <addUniqueConstraint 
+            tableName="codice_sequence" 
+            schemaName="aurora"
+            columnNames="codice_istat, entity_type"
+            constraintName="uk_codice_sequence_ente_type"/>
+    </changeSet>
+
+    <!-- Aggiungi colonna codice alla tabella dup -->
+    <changeSet id="014-add-codice-to-dup" author="aurora">
+        <addColumn tableName="dup" schemaName="aurora">
+            <column name="codice" type="VARCHAR(20)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Popola i codici esistenti per i DUP -->
+    <changeSet id="014-populate-dup-codes" author="aurora">
+        <sql>
+            WITH numbered AS (
+                SELECT id, codice_istat,
+                       ROW_NUMBER() OVER (PARTITION BY codice_istat ORDER BY id) as rn
+                FROM aurora.dup
+            )
+            UPDATE aurora.dup d
+            SET codice = 'DUP' || LPAD(n.rn::TEXT, 3, '0')
+            FROM numbered n
+            WHERE d.id = n.id;
+        </sql>
+    </changeSet>
+
+    <!-- Inizializza le sequenze per gli enti esistenti -->
+    <changeSet id="014-init-sequences" author="aurora">
+        <sql>
+            -- Sequenze DUP
+            INSERT INTO aurora.codice_sequence (codice_istat, entity_type, last_number)
+            SELECT DISTINCT codice_istat, 'DUP', COALESCE((
+                SELECT COUNT(*) FROM aurora.dup d2 WHERE d2.codice_istat = d.codice_istat
+            ), 0)
+            FROM aurora.dup d
+            ON CONFLICT DO NOTHING;
+
+            -- Sequenze Progetti (basate sul codice_istat del DUP)
+            INSERT INTO aurora.codice_sequence (codice_istat, entity_type, last_number)
+            SELECT DISTINCT dup.codice_istat, 'PRJ', COALESCE((
+                SELECT COUNT(*) FROM aurora.dup_progetti p2 
+                INNER JOIN aurora.dup d2 ON p2.dup_id = d2.id
+                WHERE d2.codice_istat = dup.codice_istat
+            ), 0)
+            FROM aurora.dup_progetti p
+            INNER JOIN aurora.dup dup ON p.dup_id = dup.id
+            ON CONFLICT DO NOTHING;
+
+            -- Sequenze Attività (basate sul codice_istat del DUP del progetto)
+            INSERT INTO aurora.codice_sequence (codice_istat, entity_type, last_number)
+            SELECT DISTINCT dup.codice_istat, 'ATT', COALESCE((
+                SELECT COUNT(*) FROM aurora.attivita a2 
+                INNER JOIN aurora.dup_progetti p2 ON a2.progetto_id = p2.id
+                INNER JOIN aurora.dup d2 ON p2.dup_id = d2.id
+                WHERE d2.codice_istat = dup.codice_istat
+            ), 0)
+            FROM aurora.attivita a
+            INNER JOIN aurora.dup_progetti p ON a.progetto_id = p.id
+            INNER JOIN aurora.dup dup ON p.dup_id = dup.id
+            ON CONFLICT DO NOTHING;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
