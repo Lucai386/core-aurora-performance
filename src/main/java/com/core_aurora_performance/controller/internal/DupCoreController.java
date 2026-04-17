@@ -4,6 +4,7 @@ import com.core_aurora_performance.model.Dup;
 import com.core_aurora_performance.model.DupProgetto;
 import com.core_aurora_performance.service.CodiceService;
 import com.core_aurora_performance.service.DupCoreService;
+import com.core_aurora_performance.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +25,8 @@ public class DupCoreController {
     // ─── DUP ──────────────────────────────────────────────────────────────────
 
     @GetMapping("/dup")
-    public ResponseEntity<List<Dup>> listDup(@RequestParam String codiceIstat) {
-        return ResponseEntity.ok(dupService.findByCodiceIstat(codiceIstat));
+    public ResponseEntity<List<Dup>> listDup() {
+        return ResponseEntity.ok(dupService.findByCodiceIstat(TenantContext.require()));
     }
 
     @GetMapping("/dup/{id}")
@@ -37,6 +38,7 @@ public class DupCoreController {
 
     @PostMapping("/dup")
     public ResponseEntity<Dup> createDup(@RequestBody Dup dup) {
+        dup.setCodiceIstat(TenantContext.require());
         if (dup.getCodice() == null || dup.getCodice().isBlank()) {
             dup.setCodice(codiceService.generateNextDupCodice(dup.getCodiceIstat()));
         }

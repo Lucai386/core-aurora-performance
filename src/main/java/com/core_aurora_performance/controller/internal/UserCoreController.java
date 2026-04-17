@@ -3,6 +3,7 @@ package com.core_aurora_performance.controller.internal;
 import com.core_aurora_performance.model.User;
 import com.core_aurora_performance.model.UserLog;
 import com.core_aurora_performance.service.UserCoreService;
+import com.core_aurora_performance.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -25,15 +26,12 @@ public class UserCoreController {
 
     @GetMapping
     public ResponseEntity<List<User>> listUsers(
-            @RequestParam(required = false) String codiceIstat,
             @RequestParam(required = false) String ruolo) {
-        if (codiceIstat != null && ruolo != null) {
+        String codiceIstat = TenantContext.require();
+        if (ruolo != null) {
             return ResponseEntity.ok(userService.findByCodiceIstatAndRuolo(codiceIstat, ruolo));
         }
-        if (codiceIstat != null) {
-            return ResponseEntity.ok(userService.findByCodiceIstat(codiceIstat));
-        }
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok(userService.findByCodiceIstat(codiceIstat));
     }
 
     @GetMapping("/{id}")

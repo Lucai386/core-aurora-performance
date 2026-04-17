@@ -3,6 +3,7 @@ package com.core_aurora_performance.controller.internal;
 import com.core_aurora_performance.model.Lpm;
 import com.core_aurora_performance.model.LpmNote;
 import com.core_aurora_performance.service.LpmCoreService;
+import com.core_aurora_performance.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +21,8 @@ public class LpmCoreController {
     private final LpmCoreService lpmService;
 
     @GetMapping
-    public ResponseEntity<List<Lpm>> list(@RequestParam String codiceIstat) {
-        return ResponseEntity.ok(lpmService.findActiveByCodiceIstat(codiceIstat));
+    public ResponseEntity<List<Lpm>> list() {
+        return ResponseEntity.ok(lpmService.findActiveByCodiceIstat(TenantContext.require()));
     }
 
     @GetMapping("/{id}")
@@ -33,6 +34,7 @@ public class LpmCoreController {
 
     @PostMapping
     public ResponseEntity<Lpm> create(@RequestBody Lpm lpm) {
+        lpm.setCodiceIstat(TenantContext.require());
         return ResponseEntity.ok(lpmService.save(lpm));
     }
 

@@ -4,6 +4,7 @@ import com.core_aurora_performance.model.Obiettivo;
 import com.core_aurora_performance.model.ObiettivoProgressivo;
 import com.core_aurora_performance.service.CodiceService;
 import com.core_aurora_performance.service.ObiettivoCoreService;
+import com.core_aurora_performance.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,11 +25,9 @@ public class ObiettivoCoreController {
 
     @GetMapping
     public ResponseEntity<List<Obiettivo>> list(
-            @RequestParam(required = false) String codiceIstat,
             @RequestParam(required = false) Long utenteId) {
         if (utenteId != null) return ResponseEntity.ok(obiettivoService.findByUtenteId(utenteId));
-        if (codiceIstat != null) return ResponseEntity.ok(obiettivoService.findByCodiceIstat(codiceIstat));
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok(obiettivoService.findByCodiceIstat(TenantContext.require()));
     }
 
     @GetMapping("/{id}")
@@ -40,6 +39,7 @@ public class ObiettivoCoreController {
 
     @PostMapping
     public ResponseEntity<Obiettivo> create(@RequestBody Obiettivo obiettivo) {
+        obiettivo.setCodiceIstat(TenantContext.require());
         if (obiettivo.getCodice() == null || obiettivo.getCodice().isBlank()) {
             obiettivo.setCodice(codiceService.generateNextObiettivoCodice(obiettivo.getCodiceIstat()));
         }
@@ -72,7 +72,8 @@ public class ObiettivoCoreController {
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Map<String, Long>> counts(@RequestParam String codiceIstat) {
+    public ResponseEntity<Map<String, Long>> counts() {
+        String codiceIstat = TenantContext.require();
         return ResponseEntity.ok(Map.of(
                 "totale", obiettivoService.countTotale(codiceIstat),
                 "attivi", obiettivoService.countAttivi(codiceIstat),

@@ -4,6 +4,7 @@ import com.core_aurora_performance.model.Struttura;
 import com.core_aurora_performance.model.StrutturaStaff;
 import com.core_aurora_performance.model.User;
 import com.core_aurora_performance.service.StrutturaCoreService;
+import com.core_aurora_performance.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +22,8 @@ public class StrutturaCoreController {
     private final StrutturaCoreService strutturaService;
 
     @GetMapping
-    public ResponseEntity<List<Struttura>> list(@RequestParam String codiceIstat) {
-        return ResponseEntity.ok(strutturaService.findByCodiceIstat(codiceIstat));
+    public ResponseEntity<List<Struttura>> list() {
+        return ResponseEntity.ok(strutturaService.findByCodiceIstat(TenantContext.require()));
     }
 
     @GetMapping("/{id}")
@@ -34,6 +35,7 @@ public class StrutturaCoreController {
 
     @PostMapping
     public ResponseEntity<Struttura> create(@RequestBody Struttura struttura) {
+        struttura.setCodiceIstatComune(TenantContext.require());
         return ResponseEntity.ok(strutturaService.save(struttura));
     }
 
