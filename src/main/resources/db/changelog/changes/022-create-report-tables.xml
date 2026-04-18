@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 022 — Tabelle report_template e report per storicizzazione        -->
+    <!--       documenti di performance (Legge Brunetta)                   -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <changeSet id="022-create-report-template" author="luca.arnone">
+        <createTable tableName="report_template" schemaName="aurora">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="codice" type="VARCHAR(80)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_report_template_codice"/>
+            </column>
+            <column name="nome" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <column name="tipo" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_html" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="struttura_campi" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="labels_i18n" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="versione" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attivo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="022-create-report" author="luca.arnone">
+        <createTable tableName="report" schemaName="aurora">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="codice_istat" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="VARCHAR(300)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <column name="anno" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="trimestre" type="INT"/>
+            <column name="stato" type="VARCHAR(20)" defaultValue="GENERATO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="utente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="utente_nome" type="VARCHAR(200)"/>
+            <column name="struttura_id" type="BIGINT"/>
+            <column name="struttura_nome" type="VARCHAR(200)"/>
+            <column name="template_id" type="BIGINT"/>
+            <column name="dati_report" type="JSONB"/>
+            <column name="parametri" type="JSONB"/>
+            <column name="lingua" type="VARCHAR(5)" defaultValue="it"/>
+            <column name="dimensione_bytes" type="BIGINT"/>
+            <column name="generato_il" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approvato_il" type="TIMESTAMP"/>
+            <column name="approvato_da_id" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="report"
+            baseColumnNames="utente_id"
+            constraintName="fk_report_utente"
+            referencedTableSchemaName="aurora"
+            referencedTableName="users"
+            referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="report"
+            baseColumnNames="template_id"
+            constraintName="fk_report_template"
+            referencedTableSchemaName="aurora"
+            referencedTableName="report_template"
+            referencedColumnNames="id"/>
+
+        <createIndex tableName="report" schemaName="aurora" indexName="idx_report_codice_istat">
+            <column name="codice_istat"/>
+        </createIndex>
+        <createIndex tableName="report" schemaName="aurora" indexName="idx_report_utente_id">
+            <column name="utente_id"/>
+        </createIndex>
+        <createIndex tableName="report" schemaName="aurora" indexName="idx_report_tipo_anno">
+            <column name="tipo"/>
+            <column name="anno"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Seed dei template di report -->
+    <changeSet id="022-seed-report-templates" author="luca.arnone">
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="SCHEDA_PERFORMANCE_INDIVIDUALE"/>
+            <column name="nome" value="Scheda Performance Individuale"/>
+            <column name="descrizione" value="Scheda individuale di valutazione delle performance ai sensi della Legge Brunetta"/>
+            <column name="tipo" value="SCHEDA_PERFORMANCE_INDIVIDUALE"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;utente&quot;,&quot;periodo&quot;,&quot;obiettivi&quot;,&quot;attivita&quot;,&quot;metriche&quot;,&quot;trend&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Scheda Performance Individuale&quot;,&quot;obiettivi&quot;:&quot;Obiettivi&quot;,&quot;attivita&quot;:&quot;Attività&quot;,&quot;metriche&quot;:&quot;Metriche&quot;,&quot;trend&quot;:&quot;Trend&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Individual Performance Card&quot;,&quot;obiettivi&quot;:&quot;Objectives&quot;,&quot;attivita&quot;:&quot;Activities&quot;,&quot;metriche&quot;:&quot;Metrics&quot;,&quot;trend&quot;:&quot;Trend&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Individuelle Leistungskarte&quot;,&quot;obiettivi&quot;:&quot;Ziele&quot;,&quot;attivita&quot;:&quot;Aktivitäten&quot;,&quot;metriche&quot;:&quot;Metriken&quot;,&quot;trend&quot;:&quot;Trend&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Ficha Rendimiento Individual&quot;,&quot;obiettivi&quot;:&quot;Objetivos&quot;,&quot;attivita&quot;:&quot;Actividades&quot;,&quot;metriche&quot;:&quot;Métricas&quot;,&quot;trend&quot;:&quot;Tendencia&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Fiche Performance Individuelle&quot;,&quot;obiettivi&quot;:&quot;Objectifs&quot;,&quot;attivita&quot;:&quot;Activités&quot;,&quot;metriche&quot;:&quot;Métriques&quot;,&quot;trend&quot;:&quot;Tendance&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Scheda Performance Individuale&quot;,&quot;obiettivi&quot;:&quot;Obietivos&quot;,&quot;attivita&quot;:&quot;Atividades&quot;,&quot;metriche&quot;:&quot;Mètricas&quot;,&quot;trend&quot;:&quot;Trend&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="SCHEDA_PERFORMANCE_STRUTTURA"/>
+            <column name="nome" value="Scheda Performance Struttura"/>
+            <column name="descrizione" value="Report aggregato della performance di una struttura organizzativa"/>
+            <column name="tipo" value="SCHEDA_PERFORMANCE_STRUTTURA"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;struttura&quot;,&quot;periodo&quot;,&quot;sintesi&quot;,&quot;dipendenti&quot;,&quot;distribuzione&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Scheda Performance Struttura&quot;,&quot;struttura&quot;:&quot;Struttura&quot;,&quot;dipendenti&quot;:&quot;Dipendenti&quot;,&quot;distribuzione&quot;:&quot;Distribuzione&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Structure Performance Card&quot;,&quot;struttura&quot;:&quot;Structure&quot;,&quot;dipendenti&quot;:&quot;Employees&quot;,&quot;distribuzione&quot;:&quot;Distribution&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Strukturleistungskarte&quot;,&quot;struttura&quot;:&quot;Struktur&quot;,&quot;dipendenti&quot;:&quot;Mitarbeiter&quot;,&quot;distribuzione&quot;:&quot;Verteilung&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Ficha Rendimiento Estructura&quot;,&quot;struttura&quot;:&quot;Estructura&quot;,&quot;dipendenti&quot;:&quot;Empleados&quot;,&quot;distribuzione&quot;:&quot;Distribución&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Fiche Performance Structure&quot;,&quot;struttura&quot;:&quot;Structure&quot;,&quot;dipendenti&quot;:&quot;Employés&quot;,&quot;distribuzione&quot;:&quot;Distribution&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Scheda Performance Istruttura&quot;,&quot;struttura&quot;:&quot;Istruttura&quot;,&quot;dipendenti&quot;:&quot;Dipendentes&quot;,&quot;distribuzione&quot;:&quot;Distributzione&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="REPORT_OBIETTIVI_INDIVIDUALE"/>
+            <column name="nome" value="Report Obiettivi Individuale"/>
+            <column name="descrizione" value="Report dettagliato sullo stato degli obiettivi individuali"/>
+            <column name="tipo" value="REPORT_OBIETTIVI_INDIVIDUALE"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;utente&quot;,&quot;periodo&quot;,&quot;obiettivi_dettaglio&quot;,&quot;progressi&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Report Obiettivi Individuale&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Individual Objectives Report&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Individueller Zielbericht&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Informe Objetivos Individual&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Rapport Objectifs Individuel&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Report Obietivos Individuale&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="REPORT_OBIETTIVI_STRUTTURA"/>
+            <column name="nome" value="Report Obiettivi Struttura"/>
+            <column name="descrizione" value="Report aggregato obiettivi per struttura organizzativa"/>
+            <column name="tipo" value="REPORT_OBIETTIVI_STRUTTURA"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;struttura&quot;,&quot;periodo&quot;,&quot;obiettivi_aggregati&quot;,&quot;dettaglio_dipendenti&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Report Obiettivi Struttura&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Structure Objectives Report&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Struktur-Zielbericht&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Informe Objetivos Estructura&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Rapport Objectifs Structure&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Report Obietivos Istruttura&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="REPORT_ATTIVITA"/>
+            <column name="nome" value="Report Attività"/>
+            <column name="descrizione" value="Report sullo stato di avanzamento delle attività"/>
+            <column name="tipo" value="REPORT_ATTIVITA"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;utente&quot;,&quot;periodo&quot;,&quot;attivita_dettaglio&quot;,&quot;ore_lavorate&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Report Attività&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Activities Report&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Aktivitätsbericht&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Informe Actividades&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Rapport Activités&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Report Atividades&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="REPORT_VALUTAZIONE_ANNUALE"/>
+            <column name="nome" value="Report Valutazione Annuale"/>
+            <column name="descrizione" value="Report annuale di valutazione delle performance complessive"/>
+            <column name="tipo" value="REPORT_VALUTAZIONE_ANNUALE"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;utente&quot;,&quot;periodo&quot;,&quot;score_complessivo&quot;,&quot;obiettivi&quot;,&quot;attivita&quot;,&quot;competenze&quot;,&quot;trend_annuale&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Report Valutazione Annuale&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Annual Evaluation Report&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Jahresbewertungsbericht&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Informe Evaluación Anual&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Rapport Évaluation Annuelle&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Report Valutatzione Annuale&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="CERTIFICAZIONE_RISULTATI"/>
+            <column name="nome" value="Certificazione Risultati"/>
+            <column name="descrizione" value="Certificazione OIV dei risultati di performance della struttura"/>
+            <column name="tipo" value="CERTIFICAZIONE_RISULTATI"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;struttura&quot;,&quot;periodo&quot;,&quot;risultati_certificati&quot;,&quot;note_oiv&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Certificazione Risultati&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Results Certification&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Ergebniszertifizierung&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Certificación de Resultados&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Certification des Résultats&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Tzertificatzione Resultados&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+        <insert tableName="report_template" schemaName="aurora">
+            <column name="codice" value="PIANO_PERFORMANCE"/>
+            <column name="nome" value="Piano della Performance"/>
+            <column name="descrizione" value="Piano triennale della performance dell&apos;ente"/>
+            <column name="tipo" value="PIANO_PERFORMANCE"/>
+            <column name="struttura_campi" valueComputed="'{&quot;sections&quot;:[&quot;ente&quot;,&quot;periodo&quot;,&quot;obiettivi_strategici&quot;,&quot;obiettivi_operativi&quot;,&quot;indicatori&quot;]}'::jsonb"/>
+            <column name="labels_i18n" valueComputed="'{&quot;it&quot;:{&quot;title&quot;:&quot;Piano della Performance&quot;},&quot;en&quot;:{&quot;title&quot;:&quot;Performance Plan&quot;},&quot;de&quot;:{&quot;title&quot;:&quot;Leistungsplan&quot;},&quot;es&quot;:{&quot;title&quot;:&quot;Plan de Rendimiento&quot;},&quot;fr&quot;:{&quot;title&quot;:&quot;Plan de Performance&quot;},&quot;sc&quot;:{&quot;title&quot;:&quot;Pianu de sa Performance&quot;}}'::jsonb"/>
+            <column name="versione" valueNumeric="1"/>
+            <column name="attivo" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
