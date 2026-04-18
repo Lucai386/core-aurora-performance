@@ -76,4 +76,12 @@ public class StrutturaCoreService {
     public boolean hasChildren(Integer strutturaId) {
         return !strutturaRepository.findByIdParent(strutturaId).isEmpty();
     }
+
+    public List<Struttura> findByUserId(Integer userId) {
+        List<StrutturaStaff> staffEntries = strutturaStaffRepository.findByIdUser(userId);
+        return staffEntries.stream()
+                .map(s -> strutturaRepository.findById(s.getIdStruttura()).orElse(null))
+                .filter(s -> s != null)
+                .toList();
+    }
 }

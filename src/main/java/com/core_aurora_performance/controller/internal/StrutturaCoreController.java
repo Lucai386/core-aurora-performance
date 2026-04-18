@@ -77,4 +77,9 @@ public class StrutturaCoreController {
     public ResponseEntity<List<User>> getUtenti(@PathVariable Integer id) {
         return ResponseEntity.ok(strutturaService.findUtentiByStrutturaId(id));
     }
+
+    @GetMapping("/utente/{userId}")
+    public ResponseEntity<List<Struttura>> getByUserId(@PathVariable Integer userId) {
+        return ResponseEntity.ok(strutturaService.findByUserId(userId));
+    }
 }
