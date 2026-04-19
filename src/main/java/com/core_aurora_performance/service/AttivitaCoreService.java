@@ -1,22 +1,24 @@
 package com.core_aurora_performance.service;
 
-import com.core_aurora_performance.model.Attivita;
-import com.core_aurora_performance.model.AttivitaAssegnazione;
-import com.core_aurora_performance.model.AttivitaStep;
-import com.core_aurora_performance.model.TimesheetEntry;
-import com.core_aurora_performance.repository.AttivitaAssegnazioneRepository;
-import com.core_aurora_performance.repository.AttivitaRepository;
-import com.core_aurora_performance.repository.AttivitaStepRepository;
-import com.core_aurora_performance.repository.TimesheetEntryRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.core_aurora_performance.model.Attivita;
+import com.core_aurora_performance.model.AttivitaAssegnazione;
+import com.core_aurora_performance.model.AttivitaStep;
+import com.core_aurora_performance.model.DupProgetto;
+import com.core_aurora_performance.repository.AttivitaAssegnazioneRepository;
+import com.core_aurora_performance.repository.AttivitaRepository;
+import com.core_aurora_performance.repository.AttivitaStepRepository;
+import com.core_aurora_performance.repository.DupProgettoRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +28,16 @@ public class AttivitaCoreService {
     private final AttivitaRepository attivitaRepository;
     private final AttivitaAssegnazioneRepository assegnazioneRepository;
     private final AttivitaStepRepository stepRepository;
-    private final TimesheetEntryRepository timesheetRepository;
+    private final DupProgettoRepository progettoRepository;
 
     // ─── Attività ─────────────────────────────────────────────────────────────
 
     public List<Attivita> findAll() {
         return attivitaRepository.findAllWithDetails();
+    }
+
+    public List<Attivita> findByCodiceIstat(String codiceIstat) {
+        return attivitaRepository.findByCodiceIstatWithDetails(codiceIstat);
     }
 
     public List<Attivita> findByProgettoId(Long progettoId) {
@@ -57,7 +63,6 @@ public class AttivitaCoreService {
 
     @Transactional
     public void delete(Long id) {
-        timesheetRepository.deleteByAttivitaId(id);
         assegnazioneRepository.deleteByAttivitaId(id);
         stepRepository.deleteByAttivitaId(id);
         attivitaRepository.deleteById(id);
@@ -87,8 +92,6 @@ public class AttivitaCoreService {
                     .attivitaId(saved.getId())
                     .utenteId(orig.getUtenteId())
                     .ruolo(orig.getRuolo())
-                    .oreStimate(orig.getOreStimate())
-                    .oreLavorate(BigDecimal.ZERO)
                     .dataInizio(orig.getDataInizio())
                     .dataFine(orig.getDataFine())
                     .note(orig.getNote())
@@ -127,14 +130,18 @@ public class AttivitaCoreService {
 
     @Transactional
     public AttivitaStep addStep(AttivitaStep step) {
-        return stepRepository.save(step);
+        AttivitaStep saved = stepRepository.save(step);
+        updatePercentualeFromSteps(step.getAttivitaId());
+        return saved;
     }
 
     @Transactional
     public Optional<AttivitaStep> toggleStep(Long stepId) {
         return stepRepository.findById(stepId).map(step -> {
             step.setCompletato(!Boolean.TRUE.equals(step.getCompletato()));
-            return stepRepository.save(step);
+            AttivitaStep saved = stepRepository.save(step);
+            updatePercentualeFromSteps(step.getAttivitaId());
+            return saved;
         });
     }
 
@@ -145,40 +152,73 @@ public class AttivitaCoreService {
 
     @Transactional
     public void removeStep(Long stepId) {
-        stepRepository.deleteById(stepId);
+        stepRepository.findById(stepId).ifPresent(step -> {
+            Long attivitaId = step.getAttivitaId();
+            stepRepository.deleteById(stepId);
+            updatePercentualeFromSteps(attivitaId);
+        });
     }
 
-    // ─── Timesheet ────────────────────────────────────────────────────────────
+    // ─── Auto-update percentuale & stato ──────────────────────────────────────
 
-    @Transactional
-    public TimesheetEntry logOre(TimesheetEntry entry) {
-        TimesheetEntry saved = timesheetRepository.save(entry);
+    private void updatePercentualeFromSteps(Long attivitaId) {
+        List<AttivitaStep> steps = stepRepository.findByAttivitaIdOrderByOrdineAsc(attivitaId);
+        if (steps.isEmpty()) return;
 
-        // Aggiorna le ore lavorate nella assegnazione
-        assegnazioneRepository.findByAttivitaIdAndUtenteId(entry.getAttivitaId(), entry.getUtenteId())
-                .ifPresent(ass -> {
-                    BigDecimal nuoveOre = (ass.getOreLavorate() != null ? ass.getOreLavorate() : BigDecimal.ZERO)
-                            .add(entry.getOreLavorate());
-                    ass.setOreLavorate(nuoveOre);
-                    assegnazioneRepository.save(ass);
-                });
+        final int percentuale = Math.min(steps.stream()
+            .filter(s -> Boolean.TRUE.equals(s.getCompletato()))
+            .mapToInt(s -> s.getPeso() != null ? s.getPeso() : 0)
+            .sum(), 100);
 
-        return saved;
+        attivitaRepository.findById(attivitaId).ifPresent(attivita -> {
+            attivita.setPercentualeCompletamento(percentuale);
+
+            if (percentuale == 100 && attivita.getStato() != Attivita.Stato.COMPLETATA) {
+                attivita.setStato(Attivita.Stato.COMPLETATA);
+                attivita.setDataFineEffettiva(LocalDate.now());
+            } else if (percentuale > 0 && percentuale < 100
+                    && (attivita.getStato() == null || attivita.getStato() == Attivita.Stato.TODO)) {
+                attivita.setStato(Attivita.Stato.IN_CORSO);
+            }
+
+            attivitaRepository.save(attivita);
+
+            if (attivita.getProgettoId() != null) {
+                updateProgettoProgresso(attivita.getProgettoId());
+            }
+        });
     }
 
-    public List<TimesheetEntry> findTimesheetByAttivita(Long attivitaId) {
-        return timesheetRepository.findByAttivitaIdOrderByDataDesc(attivitaId);
-    }
+    private void updateProgettoProgresso(Long progettoId) {
+        List<Attivita> attivita = attivitaRepository.findByProgettoIdOrderByOrdine(progettoId);
+        if (attivita.isEmpty()) return;
 
-    public List<TimesheetEntry> findTimesheetByUtente(Long utenteId, LocalDate from, LocalDate to) {
-        if (from != null && to != null) {
-            return timesheetRepository.findByUtenteIdAndDataBetween(utenteId.intValue(), from, to);
-        }
-        return timesheetRepository.findByUtenteId(utenteId.intValue());
-    }
+        int sommaPesi = attivita.stream()
+            .mapToInt(a -> a.getPeso() != null ? a.getPeso() : 100)
+            .sum();
+        if (sommaPesi == 0) return;
 
-    @Transactional
-    public void deleteTimesheetEntry(Long id) {
-        timesheetRepository.deleteById(id);
+        int progressoPesato = attivita.stream()
+            .mapToInt(a -> {
+                int peso = a.getPeso() != null ? a.getPeso() : 100;
+                int perc = a.getPercentualeCompletamento() != null ? a.getPercentualeCompletamento() : 0;
+                return peso * perc;
+            })
+            .sum();
+
+        int progresso = progressoPesato / sommaPesi;
+
+        progettoRepository.findById(progettoId).ifPresent(progetto -> {
+            progetto.setProgresso(progresso);
+
+            if (progresso == 100 && progetto.getStato() != DupProgetto.Stato.COMPLETATO) {
+                progetto.setStato(DupProgetto.Stato.COMPLETATO);
+                progetto.setDataFine(LocalDate.now());
+            } else if (progresso > 0 && progresso < 100 && progetto.getStato() == DupProgetto.Stato.TODO) {
+                progetto.setStato(DupProgetto.Stato.IN_CORSO);
+            }
+
+            progettoRepository.save(progetto);
+        });
     }
 }

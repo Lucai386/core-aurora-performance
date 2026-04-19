@@ -70,6 +70,15 @@ public class UserCoreController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{id}/immagine-profilo")
+    public ResponseEntity<User> patchImmagineProfilo(@PathVariable Long id,
+                                                      @RequestBody Map<String, String> payload) {
+        return userService.findById(id).map(u -> {
+            u.setImmagineProfilo(payload.get("immagineProfilo"));
+            return ResponseEntity.ok(userService.save(u));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         userService.delete(id);

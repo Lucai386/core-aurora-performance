@@ -19,6 +19,11 @@ public interface StrutturaRepository extends JpaRepository<Struttura, Integer> {
 
     List<Struttura> findByIdParent(Integer idParent);
 
+    @Query(value = "SELECT s.codice_istat_comune, COUNT(*) FROM aurora.strutture s " +
+                   "WHERE s.codice_istat_comune IS NOT NULL GROUP BY s.codice_istat_comune",
+           nativeQuery = true)
+    List<Object[]> countGroupByCodiceIstat();
+
     @Query("SELECT s FROM Struttura s " +
            "LEFT JOIN FETCH s.responsabile " +
            "LEFT JOIN FETCH s.staff st " +

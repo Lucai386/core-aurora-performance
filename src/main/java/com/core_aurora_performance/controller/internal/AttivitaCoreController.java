@@ -1,20 +1,29 @@
 package com.core_aurora_performance.controller.internal;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.core_aurora_performance.model.Attivita;
 import com.core_aurora_performance.model.AttivitaAssegnazione;
 import com.core_aurora_performance.model.AttivitaStep;
-import com.core_aurora_performance.model.TimesheetEntry;
 import com.core_aurora_performance.service.AttivitaCoreService;
+import com.core_aurora_performance.service.CodiceService;
+import com.core_aurora_performance.tenant.TenantContext;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/internal/attivita")
@@ -23,6 +32,7 @@ import java.util.Map;
 public class AttivitaCoreController {
 
     private final AttivitaCoreService attivitaService;
+    private final CodiceService codiceService;
 
     @GetMapping
     public ResponseEntity<List<Attivita>> list(
@@ -32,7 +42,8 @@ public class AttivitaCoreController {
         if (progettoId != null) return ResponseEntity.ok(attivitaService.findByProgettoId(progettoId));
         if (utenteId != null) return ResponseEntity.ok(attivitaService.findByUtenteId(utenteId));
         if (strutturaId != null) return ResponseEntity.ok(attivitaService.findByStrutturaId(strutturaId));
-        return ResponseEntity.ok(attivitaService.findAll());
+        String codiceIstat = TenantContext.require();
+        return ResponseEntity.ok(attivitaService.findByCodiceIstat(codiceIstat));
     }
 
     @GetMapping("/{id}")
@@ -44,6 +55,10 @@ public class AttivitaCoreController {
 
     @PostMapping
     public ResponseEntity<Attivita> create(@RequestBody Attivita attivita) {
+        if (attivita.getCodice() == null || attivita.getCodice().isBlank()) {
+            String codiceIstat = TenantContext.require();
+            attivita.setCodice(codiceService.generateNextAttivitaCodice(codiceIstat));
+        }
         return ResponseEntity.ok(attivitaService.save(attivita));
     }
 
@@ -119,32 +134,6 @@ public class AttivitaCoreController {
     @DeleteMapping("/{id}/steps/{stepId}")
     public ResponseEntity<Void> removeStep(@PathVariable Long id, @PathVariable Long stepId) {
         attivitaService.removeStep(stepId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ─── Timesheet ────────────────────────────────────────────────────────────
-
-    @PostMapping("/timesheet")
-    public ResponseEntity<TimesheetEntry> logOre(@RequestBody TimesheetEntry entry) {
-        return ResponseEntity.ok(attivitaService.logOre(entry));
-    }
-
-    @GetMapping("/timesheet/attivita/{attivitaId}")
-    public ResponseEntity<List<TimesheetEntry>> getTimesheetByAttivita(@PathVariable Long attivitaId) {
-        return ResponseEntity.ok(attivitaService.findTimesheetByAttivita(attivitaId));
-    }
-
-    @GetMapping("/timesheet/utente/{utenteId}")
-    public ResponseEntity<List<TimesheetEntry>> getTimesheetByUtente(
-            @PathVariable Long utenteId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ResponseEntity.ok(attivitaService.findTimesheetByUtente(utenteId, from, to));
-    }
-
-    @DeleteMapping("/timesheet/{id}")
-    public ResponseEntity<Void> deleteTimesheetEntry(@PathVariable Long id) {
-        attivitaService.deleteTimesheetEntry(id);
         return ResponseEntity.noContent().build();
     }
 }

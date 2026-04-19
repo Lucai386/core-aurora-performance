@@ -1,6 +1,5 @@
 package com.core_aurora_performance.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -87,16 +86,6 @@ public class Attivita {
 
     // ==================== METRICHE TEMPORALI ====================
 
-    /** Ore stimate per completare l'attività */
-    @Column(name = "ore_stimate")
-    @Builder.Default
-    private BigDecimal oreStimate = BigDecimal.ZERO;
-
-    /** Ore effettivamente lavorate (calcolate dal timesheet) */
-    @Column(name = "ore_lavorate")
-    @Builder.Default
-    private BigDecimal oreLavorate = BigDecimal.ZERO;
-
     /** Data di inizio prevista */
     @Column(name = "data_inizio")
     private LocalDate dataInizio;
@@ -145,10 +134,6 @@ public class Attivita {
     @Builder.Default
     private List<AttivitaAssegnazione> assegnazioni = new ArrayList<>();
 
-    @OneToMany(mappedBy = "attivita", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<TimesheetEntry> timesheetEntries = new ArrayList<>();
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "attivita_id")
     @Builder.Default
@@ -167,27 +152,6 @@ public class Attivita {
     }
 
     // ==================== COMPUTED ====================
-
-    /**
-     * Calcola le ore mancanti per completare l'attività.
-     */
-    public BigDecimal getOreMancanti() {
-        if (oreStimate == null) return BigDecimal.ZERO;
-        if (oreLavorate == null) return oreStimate;
-        BigDecimal diff = oreStimate.subtract(oreLavorate);
-        return diff.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : diff;
-    }
-
-    /**
-     * Calcola la percentuale di ore lavorate rispetto alle stimate (può superare 100%).
-     * Questo è diverso dalla percentualeCompletamento che è gestita manualmente.
-     */
-    public Integer getPercentualeOreLavorate() {
-        if (oreStimate == null || oreStimate.compareTo(BigDecimal.ZERO) == 0) return 0;
-        if (oreLavorate == null) return 0;
-        BigDecimal percentuale = oreLavorate.multiply(BigDecimal.valueOf(100)).divide(oreStimate, 0, java.math.RoundingMode.HALF_UP);
-        return percentuale.intValue(); // Può superare 100% (overflow)
-    }
 
     /**
      * Calcola lo scostamento in giorni rispetto alla data di fine stimata.

@@ -57,6 +57,9 @@ public class User {
     @Column(name = "assegnazioni", columnDefinition = "jsonb")
     private Map<String, Object> assegnazioni;
 
+    @Column(name = "immagine_profilo", columnDefinition = "text")
+    private String immagineProfilo;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

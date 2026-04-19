@@ -21,6 +21,15 @@ public interface AttivitaRepository extends JpaRepository<Attivita, Long> {
            "ORDER BY a.ordine")
     List<Attivita> findAllWithDetails();
 
+    @Query("SELECT DISTINCT a FROM Attivita a " +
+           "LEFT JOIN FETCH a.progetto p " +
+           "JOIN p.dup d " +
+           "LEFT JOIN FETCH a.assegnazioni ass " +
+           "LEFT JOIN FETCH ass.utente " +
+           "WHERE d.codiceIstat = :codiceIstat " +
+           "ORDER BY a.ordine")
+    List<Attivita> findByCodiceIstatWithDetails(@Param("codiceIstat") String codiceIstat);
+
     @Query("SELECT a FROM Attivita a " +
            "LEFT JOIN FETCH a.progetto p " +
            "LEFT JOIN FETCH a.assegnazioni ass " +

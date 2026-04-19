@@ -1,10 +1,10 @@
 package com.core_aurora_performance.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -46,16 +46,6 @@ public class AttivitaAssegnazione {
     /** Ruolo dell'utente nell'attività (es. "Responsabile", "Collaboratore") */
     @Column(length = 50)
     private String ruolo;
-
-    /** Ore stimate per questo utente su questa attività */
-    @Column(name = "ore_stimate")
-    @Builder.Default
-    private BigDecimal oreStimate = BigDecimal.ZERO;
-
-    /** Ore effettivamente lavorate da questo utente (calcolate dal timesheet) */
-    @Column(name = "ore_lavorate")
-    @Builder.Default
-    private BigDecimal oreLavorate = BigDecimal.ZERO;
 
     @Column(name = "data_assegnazione")
     private LocalDate dataAssegnazione;

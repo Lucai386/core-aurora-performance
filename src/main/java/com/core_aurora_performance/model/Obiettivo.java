@@ -152,6 +152,9 @@ public class Obiettivo {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (stato == null) {
+            stato = StatoObiettivo.ATTIVO;
+        }
         if (valoreCorrente == null) {
             valoreCorrente = valoreIniziale != null ? valoreIniziale : BigDecimal.ZERO;
         }
