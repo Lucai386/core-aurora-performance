@@ -1,0 +1,16 @@
+# Test profile — configurazione per ambiente di test/CI
+
+spring:
+  jpa:
+    show-sql: false
+  liquibase:
+    enabled: true
+
+logging:
+  level:
+    com.core_aurora_performance: INFO
+    org.springframework.security: WARN
+
+springdoc:
+  swagger-ui:
+    enabled: true

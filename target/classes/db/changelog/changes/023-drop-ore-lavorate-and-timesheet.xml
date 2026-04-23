@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ================================================================== -->
+    <!-- 023 – Rimozione ore_lavorate e timesheet_entries                   -->
+    <!-- Le ore lavorate non vengono più tracciate.                         -->
+    <!-- Si mantiene ore_stimate come dato di pianificazione.               -->
+    <!-- ================================================================== -->
+
+    <!-- 1. Drop tabella timesheet_entries (e relativi indici/FK via CASCADE) -->
+    <changeSet id="023-drop-timesheet-entries" author="aurora">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="timesheet_entries" schemaName="aurora"/>
+        </preConditions>
+        <dropTable tableName="timesheet_entries" schemaName="aurora" cascadeConstraints="true"/>
+    </changeSet>
+
+    <!-- 2. Drop colonna ore_lavorate da attivita -->
+    <changeSet id="023-drop-ore-lavorate-attivita" author="aurora">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="attivita" schemaName="aurora" columnName="ore_lavorate"/>
+        </preConditions>
+        <dropColumn tableName="attivita" schemaName="aurora" columnName="ore_lavorate"/>
+    </changeSet>
+
+    <!-- 3. Drop colonna ore_lavorate da attivita_assegnazioni -->
+    <changeSet id="023-drop-ore-lavorate-assegnazioni" author="aurora">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="attivita_assegnazioni" schemaName="aurora" columnName="ore_lavorate"/>
+        </preConditions>
+        <dropColumn tableName="attivita_assegnazioni" schemaName="aurora" columnName="ore_lavorate"/>
+    </changeSet>
+
+</databaseChangeLog>

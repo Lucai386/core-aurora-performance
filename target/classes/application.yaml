@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: core-aurora-performance
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:54329/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: aurora
+
+  liquibase:
+    enabled: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Accetta token sia da service-account BFF che da client Keycloak
+          issuer-uri: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:aurora-performance}
+          jwk-set-uri: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:aurora-performance}/protocol/openid-connect/certs
+
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8180}
+  realm: ${KEYCLOAK_REALM:aurora-performance}
+
+server:
+  port: ${SERVER_PORT:8081}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.core_aurora_performance: INFO
+    org.springframework.security: WARN

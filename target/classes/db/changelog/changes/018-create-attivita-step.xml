@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Crea tabella attivita_step per i sottostep delle attività -->
+    <changeSet id="018-1-create-attivita-step" author="luca">
+        <createTable tableName="attivita_step">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="attivita_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <column name="completato" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ordine" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="attivita_step"
+            baseColumnNames="attivita_id"
+            constraintName="fk_attivita_step_attivita"
+            referencedTableName="attivita"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <createIndex indexName="idx_attivita_step_attivita" tableName="attivita_step">
+            <column name="attivita_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Rimuove il campo peso_merito dalla tabella attivita -->
+    <changeSet id="018-2-remove-peso-merito" author="luca">
+        <dropColumn tableName="attivita" columnName="peso_merito"/>
+    </changeSet>
+
+    <!-- Rinomina peso_completamento in peso (per semplicità) -->
+    <changeSet id="018-3-rename-peso-completamento" author="luca">
+        <renameColumn tableName="attivita" 
+                      oldColumnName="peso_completamento" 
+                      newColumnName="peso"
+                      columnDataType="INTEGER"/>
+    </changeSet>
+
+</databaseChangeLog>

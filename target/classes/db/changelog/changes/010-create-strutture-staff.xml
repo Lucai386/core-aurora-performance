@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="010-create-strutture-staff" author="luca.arnone">
+        <createTable tableName="strutture_staff" schemaName="aurora">
+            <column name="id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="id_struttura" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="id_user" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ruolo_struttura" type="VARCHAR(50)">
+                <!-- Ruolo specifico all'interno della struttura (es. "Capo Settore") -->
+            </column>
+            <column name="ordine" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint 
+            baseTableSchemaName="aurora"
+            baseTableName="strutture_staff" 
+            baseColumnNames="id_struttura"
+            referencedTableSchemaName="aurora"
+            referencedTableName="strutture"
+            referencedColumnNames="id"
+            constraintName="fk_strutture_staff_struttura"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint 
+            baseTableSchemaName="aurora"
+            baseTableName="strutture_staff" 
+            baseColumnNames="id_user"
+            referencedTableSchemaName="aurora"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_strutture_staff_user"
+            onDelete="CASCADE"/>
+
+        <!-- Indice unico per evitare duplicati -->
+        <addUniqueConstraint 
+            schemaName="aurora"
+            tableName="strutture_staff" 
+            columnNames="id_struttura,id_user"
+            constraintName="uk_strutture_staff_struttura_user"/>
+
+        <!-- Indice per query per struttura -->
+        <createIndex schemaName="aurora" tableName="strutture_staff" indexName="idx_strutture_staff_struttura">
+            <column name="id_struttura"/>
+        </createIndex>
+
+        <!-- Indice per query per utente -->
+        <createIndex schemaName="aurora" tableName="strutture_staff" indexName="idx_strutture_staff_user">
+            <column name="id_user"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

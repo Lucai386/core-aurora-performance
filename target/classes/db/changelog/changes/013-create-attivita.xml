@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Creazione tabelle per Attività/Timesheet -->
+    
+    <!-- Tabella attività (sotto-attività di un progetto) -->
+    <changeSet id="013-create-attivita" author="aurora">
+        <createTable tableName="attivita" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="progetto_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="codice" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="titolo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <!-- Stato: TODO, IN_CORSO, COMPLETATA, SOSPESA -->
+            <column name="stato" type="VARCHAR(20)" defaultValue="TODO"/>
+            <!-- Priorità: BASSA, MEDIA, ALTA, CRITICA -->
+            <column name="priorita" type="VARCHAR(20)" defaultValue="MEDIA"/>
+            <!-- Pesi per valutazione performance -->
+            <column name="peso_merito" type="INTEGER" defaultValue="50">
+                <constraints nullable="false"/>
+            </column>
+            <column name="peso_completamento" type="INTEGER" defaultValue="50">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Metriche temporali -->
+            <column name="ore_stimate" type="DECIMAL(10,2)" defaultValue="0"/>
+            <column name="ore_lavorate" type="DECIMAL(10,2)" defaultValue="0"/>
+            <column name="data_inizio" type="DATE"/>
+            <column name="data_fine_stimata" type="DATE"/>
+            <column name="data_fine_effettiva" type="DATE"/>
+            <!-- Altri campi -->
+            <column name="note" type="TEXT"/>
+            <column name="ordine" type="INTEGER" defaultValue="0"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="attivita"
+            baseColumnNames="progetto_id"
+            constraintName="fk_attivita_progetto"
+            referencedTableSchemaName="aurora"
+            referencedTableName="dup_progetti"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Tabella assegnazioni utenti alle attività -->
+    <changeSet id="013-create-attivita-assegnazioni" author="aurora">
+        <createTable tableName="attivita_assegnazioni" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="attivita_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="utente_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Ruolo nell'attività: Responsabile, Collaboratore -->
+            <column name="ruolo" type="VARCHAR(50)"/>
+            <!-- Ore stimate per questo utente -->
+            <column name="ore_stimate" type="DECIMAL(10,2)" defaultValue="0"/>
+            <!-- Ore lavorate (calcolate dal timesheet) -->
+            <column name="ore_lavorate" type="DECIMAL(10,2)" defaultValue="0"/>
+            <column name="data_assegnazione" type="DATE"/>
+            <column name="data_inizio" type="DATE"/>
+            <column name="data_fine" type="DATE"/>
+            <column name="note" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="attivita_assegnazioni"
+            baseColumnNames="attivita_id"
+            constraintName="fk_assegnazione_attivita"
+            referencedTableSchemaName="aurora"
+            referencedTableName="attivita"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="attivita_assegnazioni"
+            baseColumnNames="utente_id"
+            constraintName="fk_assegnazione_utente"
+            referencedTableSchemaName="aurora"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <!-- Vincolo unique: un utente può essere assegnato una sola volta per attività -->
+        <addUniqueConstraint
+            schemaName="aurora"
+            tableName="attivita_assegnazioni"
+            columnNames="attivita_id, utente_id"
+            constraintName="uk_attivita_utente"/>
+    </changeSet>
+
+    <!-- Tabella timesheet (ore lavorate) -->
+    <changeSet id="013-create-timesheet-entries" author="aurora">
+        <createTable tableName="timesheet_entries" schemaName="aurora">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="attivita_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="utente_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ore_lavorate" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descrizione" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="timesheet_entries"
+            baseColumnNames="attivita_id"
+            constraintName="fk_timesheet_attivita"
+            referencedTableSchemaName="aurora"
+            referencedTableName="attivita"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="aurora"
+            baseTableName="timesheet_entries"
+            baseColumnNames="utente_id"
+            constraintName="fk_timesheet_utente"
+            referencedTableSchemaName="aurora"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Indici per performance -->
+    <changeSet id="013-create-attivita-indexes" author="aurora">
+        <createIndex indexName="idx_attivita_progetto" tableName="attivita" schemaName="aurora">
+            <column name="progetto_id"/>
+        </createIndex>
+        <createIndex indexName="idx_attivita_stato" tableName="attivita" schemaName="aurora">
+            <column name="stato"/>
+        </createIndex>
+        <createIndex indexName="idx_assegnazione_attivita" tableName="attivita_assegnazioni" schemaName="aurora">
+            <column name="attivita_id"/>
+        </createIndex>
+        <createIndex indexName="idx_assegnazione_utente" tableName="attivita_assegnazioni" schemaName="aurora">
+            <column name="utente_id"/>
+        </createIndex>
+        <createIndex indexName="idx_timesheet_attivita" tableName="timesheet_entries" schemaName="aurora">
+            <column name="attivita_id"/>
+        </createIndex>
+        <createIndex indexName="idx_timesheet_utente" tableName="timesheet_entries" schemaName="aurora">
+            <column name="utente_id"/>
+        </createIndex>
+        <createIndex indexName="idx_timesheet_data" tableName="timesheet_entries" schemaName="aurora">
+            <column name="data"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

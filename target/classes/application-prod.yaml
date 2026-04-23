@@ -1,0 +1,15 @@
+# Prod profile — configurazione per produzione
+
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.core_aurora_performance: WARN
+    org.springframework.security: WARN
+    root: WARN
+
+springdoc:
+  swagger-ui:
+    enabled: false
