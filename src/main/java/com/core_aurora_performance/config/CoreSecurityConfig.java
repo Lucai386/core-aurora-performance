@@ -12,10 +12,11 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import com.core_aurora_performance.tenant.TenantFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.core_aurora_performance.tenant.TenantFilter;
 
 /**
  * Security del core: accetta solo Bearer token di tipo service-account
@@ -33,11 +34,8 @@ public class CoreSecurityConfig {
     private String jwkSetUri;
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/api-docs/**",
-            "/v3/api-docs/**",
-            "/actuator/health"
+            "/actuator/health",
+            "/actuator/prometheus"
     };
 
     @Bean
