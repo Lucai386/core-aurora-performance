@@ -4,6 +4,10 @@
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /workspace
 
+# Build and install the shared Aurora commons library (git submodule)
+COPY commons commons
+RUN cd commons && chmod +x mvnw && ./mvnw -B -q -DskipTests install
+
 # Copy Maven wrapper first to leverage layer caching
 COPY mvnw ./
 COPY .mvn .mvn

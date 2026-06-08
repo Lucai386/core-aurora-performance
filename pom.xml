@@ -17,6 +17,12 @@
 		<java.version>25</java.version>
 	</properties>
 	<dependencies>
+		<!-- Libreria comune Aurora (DTO, enum, eccezioni, logging ACN) -->
+		<dependency>
+			<groupId>com.aurora</groupId>
+			<artifactId>aurora-be-commons</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 		<!-- Web MVC -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

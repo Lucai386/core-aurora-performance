@@ -9,6 +9,9 @@ logging:
     com.core_aurora_performance: WARN
     org.springframework.security: WARN
     root: WARN
+  structured:
+    format:
+      console: ecs
 
 springdoc:
   swagger-ui:

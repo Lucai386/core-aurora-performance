@@ -7,33 +7,19 @@ Servizio core (Spring Boot) — gestisce la logica di business e l'accesso al da
 docker compose up -d
 ```
 
-## Deploy su GCP Cloud
+## Deploy su OVH (single VM)
 
-### Prerequisiti
+In produzione il servizio gira come container Docker sulla VM OVH, avviato
+insieme al resto dello stack via `docker compose`.
+
 ```bash
-gcloud auth configure-docker europe-west8-docker.pkg.dev
-gcloud container clusters get-credentials aurora-cluster --region europe-west8 --project aurora-perf-prod
+# Sulla VM OVH, dalla root del workspace
+docker compose --project-directory core-aurora-performance up -d --build
+# oppure l'intero stack:
+make up
 ```
 
-### 1. Build JAR
-```bash
-./mvnw package -DskipTests -B
-```
+Le immagini si buildano localmente sulla VM (Dockerfile multi-stage). Config e
+segreti vengono letti dal file `.env` (vedi `.env.example`).
 
-### 2. Build immagine Docker
-```bash
-docker build -t europe-west8-docker.pkg.dev/aurora-perf-prod/aurora-docker/core:latest .
-```
-
-### 3. Push su Artifact Registry
-```bash
-docker push europe-west8-docker.pkg.dev/aurora-perf-prod/aurora-docker/core:latest
-```
-
-### 4. Deploy su GKE
-```bash
-kubectl rollout restart deployment/core -n aurora
-kubectl rollout status deployment/core -n aurora
-```
-
-> **Manifest K8s**: `k8s/20-core.yaml` — porta 8081
+> Porta interna: 8081 (non esposto su Internet). Vedi `aurora-devops/GUIDA-DEPLOY-OVH.md`.
