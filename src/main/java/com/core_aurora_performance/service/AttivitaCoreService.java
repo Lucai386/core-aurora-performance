@@ -73,7 +73,13 @@ public class AttivitaCoreService {
         Attivita source = attivitaRepository.findById(sourceId)
                 .orElseThrow(() -> new IllegalArgumentException("Attivita not found: " + sourceId));
 
-        Attivita copy = Attivita.builder()
+        Attivita saved = attivitaRepository.save(buildCopy(source));
+        copyAssegnazioni(sourceId, saved.getId());
+        return saved;
+    }
+
+    private Attivita buildCopy(Attivita source) {
+        return Attivita.builder()
                 .progettoId(source.getProgettoId())
                 .codice(source.getCodice() + "-COPY")
                 .titolo(source.getTitolo() + " (copia)")
@@ -83,23 +89,19 @@ public class AttivitaCoreService {
                 .strutturaId(source.getStrutturaId())
                 .percentualeCompletamento(0)
                 .build();
-        Attivita saved = attivitaRepository.save(copy);
+    }
 
-        // Copia le assegnazioni
-        List<AttivitaAssegnazione> origAssegnazioni = assegnazioneRepository.findByAttivitaId(sourceId);
-        for (AttivitaAssegnazione orig : origAssegnazioni) {
-            AttivitaAssegnazione newAss = AttivitaAssegnazione.builder()
-                    .attivitaId(saved.getId())
+    private void copyAssegnazioni(Long sourceId, Long targetId) {
+        for (AttivitaAssegnazione orig : assegnazioneRepository.findByAttivitaId(sourceId)) {
+            assegnazioneRepository.save(AttivitaAssegnazione.builder()
+                    .attivitaId(targetId)
                     .utenteId(orig.getUtenteId())
                     .ruolo(orig.getRuolo())
                     .dataInizio(orig.getDataInizio())
                     .dataFine(orig.getDataFine())
                     .note(orig.getNote())
-                    .build();
-            assegnazioneRepository.save(newAss);
+                    .build());
         }
-
-        return saved;
     }
 
     // ─── Assegnazioni ─────────────────────────────────────────────────────────
